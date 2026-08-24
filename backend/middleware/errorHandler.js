@@ -1,38 +1,37 @@
-// Centralized Global Error Handling Middleware
 const errorHandler = (err, req, res, next) => {
   let statusCode = res.statusCode === 200 ? 500 : res.statusCode;
   let message = err.message || 'Internal Server Error';
+  let errors = [];
 
-  // Handle Mongoose Validation Errors
   if (err.name === 'ValidationError') {
     statusCode = 400;
-    message = Object.values(err.errors)
-      .map((val) => val.message)
-      .join(', ');
-  }
-
-  // Handle Mongoose Duplicate Key Errors
-  if (err.code === 11000) {
+    message = 'Validation failed';
+    errors = Object.values(err.errors).map((val) => val.message);
+  } else if (err.code === 11000) {
     statusCode = 400;
+    message = 'Duplicate field entered';
     const field = Object.keys(err.keyValue)[0];
-    message = `Duplicate entry for ${field}. Please use another value.`;
-  }
-
-  // Handle Bad ObjectId (CastError)
-  if (err.name === 'CastError' && err.kind === 'ObjectId') {
+    errors = [`An account with this ${field} already exists`];
+  } else if (err.name === 'CastError' && err.kind === 'ObjectId') {
     statusCode = 400;
-    message = 'Invalid ID format';
+    message = 'Resource not found';
+    errors = ['Invalid ObjectId format'];
+  } else {
+    errors = [message];
   }
 
-  // Structured JSON response (no raw stack trace in error messages)
   res.status(statusCode).json({
-    message: message
+    success: false,
+    message,
+    error: message,
+    errors
   });
 };
 
 const notFound = (req, res, next) => {
   res.status(404).json({
-    message: `Route not found - ${req.originalUrl}`
+    success: false,
+    message: `Not Found - ${req.originalUrl}`
   });
 };
 

@@ -1,10 +1,7 @@
 const jwt = require('jsonwebtoken');
-const mongoose = require('mongoose');
 const Member = require('../models/Member');
-const store = require('../store');
 
-// authGuard middleware validates Bearer token and attaches req.member
-const authGuard = async (req, res, next) => {
+const protect = async (req, res, next) => {
   let token;
 
   if (
@@ -18,34 +15,43 @@ const authGuard = async (req, res, next) => {
         process.env.JWT_SECRET || 'itue301_fitness_secret_jwt_key_2026'
       );
 
-      let member;
-      if (mongoose.connection.readyState === 1) {
-        member = await Member.findById(decoded.id).select('-password');
-      } else {
-        member = store.members.find((m) => m._id.toString() === decoded.id.toString());
-      }
+      const user = await Member.findById(decoded.id).select('-password');
 
-      if (!member) {
+      if (!user) {
         return res.status(401).json({
-          message: 'Member account not found'
+          success: false,
+          error: 'User account not found'
         });
       }
 
-      // Attach member object to request as req.member
-      req.member = member;
+      req.user = user;
+      req.member = user;
       return next();
     } catch (error) {
       return res.status(401).json({
-        message: 'Unauthorized: Invalid or expired Bearer token'
+        success: false,
+        error: 'Not authorized, token failed'
       });
     }
   }
 
   if (!token) {
     return res.status(401).json({
-      message: 'Unauthorized: Missing Authorization Bearer token'
+      success: false,
+      error: 'Not authorized, no Bearer token provided'
     });
   }
 };
 
-module.exports = authGuard;
+const adminOnly = (req, res, next) => {
+  if (req.user && req.user.role === 'admin') {
+    next();
+  } else {
+    res.status(403).json({
+      success: false,
+      error: 'Access denied: Admin privileges required'
+    });
+  }
+};
+
+module.exports = { protect, adminOnly, authGuard: protect };

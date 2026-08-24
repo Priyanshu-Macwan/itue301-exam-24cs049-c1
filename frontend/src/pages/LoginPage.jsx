@@ -1,42 +1,41 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { Dumbbell, Lock, Mail, User, Shield, Sparkles, CheckCircle2 } from 'lucide-react';
 
 const LoginPage = () => {
   const [isLogin, setIsLogin] = useState(true);
   const [name, setName] = useState('');
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const [email, setEmail] = useState('member@fitness.com');
+  const [password, setPassword] = useState('password123');
   const [membershipType, setMembershipType] = useState('Premium');
   const [role, setRole] = useState('member');
   const [error, setError] = useState('');
-  const [loading, setLoading] = useState(false);
+  const [successMsg, setSuccessMsg] = useState('');
 
-  const { login, register } = useAuth();
+  const { login, register, loading } = useAuth();
   const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
-    setLoading(true);
+    setSuccessMsg('');
 
     try {
       if (isLogin) {
         await login(email, password);
+        navigate('/classes');
       } else {
         await register(name, email, password, membershipType, role);
+        setSuccessMsg('Account created & stored in MongoDB Atlas! Redirecting...');
+        setTimeout(() => navigate('/classes'), 1200);
       }
-      navigate('/classes');
     } catch (err) {
-      setError(err.message || 'Authentication failed. Please check details.');
-    } finally {
-      setLoading(false);
+      setError(err.message || 'Authentication failed');
     }
   };
 
-  const handleQuickDemo = (demoRole) => {
-    if (demoRole === 'member') {
+  const handleQuickDemo = (demoType) => {
+    if (demoType === 'member') {
       setEmail('member@fitness.com');
       setPassword('password123');
     } else {
@@ -47,210 +46,128 @@ const LoginPage = () => {
   };
 
   return (
-    <div style={{
-      minHeight: '85vh',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      padding: '2rem 1rem'
-    }}>
-      <div className="glass-panel-glow animate-fade-in" style={{
-        maxWidth: '460px',
-        width: '100%',
-        padding: '2.5rem 2rem',
-        position: 'relative'
-      }}>
-        {/* Top Header */}
-        <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
-          <div style={{
-            width: '56px',
-            height: '56px',
-            borderRadius: '16px',
-            background: 'linear-gradient(135deg, var(--primary) 0%, var(--accent-cyan) 100%)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            margin: '0 auto 1rem auto',
-            boxShadow: '0 0 30px rgba(139, 92, 246, 0.5)'
-          }}>
-            <Dumbbell size={30} color="#ffffff" />
-          </div>
-          <h2 style={{ fontSize: '1.75rem', fontWeight: 800, color: '#fff', letterSpacing: '-0.02em' }}>
-            {isLogin ? 'Welcome Back' : 'Create Account'}
+    <div style={{ minHeight: '80vh', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '2rem 1rem' }}>
+      <div className="editorial-card" style={{ maxWidth: '440px', width: '100%', padding: '2.5rem 2rem' }}>
+        <div style={{ textAlign: 'center', marginBottom: '1.5rem' }}>
+          <div className="editorial-kicker">FITZONE ATHLETIC CLUB</div>
+          <h2 className="editorial-title" style={{ fontSize: '1.65rem' }}>
+            {isLogin ? 'MEMBER LOGIN' : 'CREATE ACCOUNT'}
           </h2>
-          <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', marginTop: '0.2rem' }}>
-            {isLogin ? 'Sign in to access your fitness classes & bookings' : 'Join PULSE Studio for elite training & sessions'}
+          <p className="editorial-subtitle">
+            {isLogin ? 'Enter your credentials to access gym classes.' : 'Sign up to register your account in MongoDB Atlas.'}
           </p>
         </div>
 
-        {/* Quick Demo Credentials Banner */}
-        <div style={{
-          background: 'rgba(139, 92, 246, 0.08)',
-          border: '1px solid rgba(139, 92, 246, 0.25)',
-          borderRadius: 'var(--radius-md)',
-          padding: '0.85rem 1rem',
-          marginBottom: '1.5rem',
-          fontSize: '0.825rem'
-        }}>
-          <div style={{ fontWeight: 700, color: '#c084fc', marginBottom: '0.4rem', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-            <Sparkles size={14} /> Quick Demo Login (One-Click)
-          </div>
-          <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.4rem' }}>
+        {/* Mode Switcher Tabs */}
+        <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1.25rem', backgroundColor: '#F4F0E8', padding: '0.25rem', borderRadius: '4px' }}>
+          <button
+            type="button"
+            onClick={() => { setIsLogin(true); setError(''); setSuccessMsg(''); }}
+            className={`btn btn-sm ${isLogin ? 'btn-dark' : 'btn-outline'}`}
+            style={{ flex: 1 }}
+          >
+            SIGN IN
+          </button>
+          <button
+            type="button"
+            onClick={() => { setIsLogin(false); setError(''); setSuccessMsg(''); }}
+            className={`btn btn-sm ${!isLogin ? 'btn-dark' : 'btn-outline'}`}
+            style={{ flex: 1 }}
+          >
+            REGISTER / SIGNUP
+          </button>
+        </div>
+
+        {/* Demo Accounts Quick Fill */}
+        <div style={{ backgroundColor: '#F4F0E8', padding: '0.75rem', borderRadius: '4px', marginBottom: '1.25rem', fontSize: '0.8rem' }}>
+          <div style={{ fontWeight: 800, color: '#17231D', marginBottom: '0.35rem' }}>⚡ QUICK DEMO LOGINS</div>
+          <div style={{ display: 'flex', gap: '0.5rem' }}>
             <button
               type="button"
               onClick={() => handleQuickDemo('member')}
-              className="btn btn-sm btn-secondary"
-              style={{ flex: 1, fontSize: '0.75rem', padding: '0.35rem' }}
+              className="btn btn-sm btn-outline"
+              style={{ flex: 1, fontSize: '0.7rem' }}
             >
               Member Demo
             </button>
             <button
               type="button"
               onClick={() => handleQuickDemo('admin')}
-              className="btn btn-sm btn-accent"
-              style={{ flex: 1, fontSize: '0.75rem', padding: '0.35rem' }}
+              className="btn btn-sm btn-primary"
+              style={{ flex: 1, fontSize: '0.7rem' }}
             >
               Admin Demo
             </button>
           </div>
         </div>
 
-        {/* Mode Toggle Switch */}
-        <div style={{
-          display: 'flex',
-          background: 'rgba(255, 255, 255, 0.03)',
-          padding: '0.25rem',
-          borderRadius: 'var(--radius-md)',
-          marginBottom: '1.5rem',
-          border: '1px solid var(--border-glass)'
-        }}>
-          <button
-            type="button"
-            onClick={() => { setIsLogin(true); setError(''); }}
-            style={{
-              flex: 1,
-              padding: '0.5rem',
-              border: 'none',
-              borderRadius: 'var(--radius-sm)',
-              background: isLogin ? 'var(--primary)' : 'transparent',
-              color: isLogin ? '#fff' : 'var(--text-muted)',
-              fontWeight: 700,
-              fontSize: '0.875rem',
-              cursor: 'pointer',
-              transition: 'var(--transition-fast)'
-            }}
-          >
-            Sign In
-          </button>
-          <button
-            type="button"
-            onClick={() => { setIsLogin(false); setError(''); }}
-            style={{
-              flex: 1,
-              padding: '0.5rem',
-              border: 'none',
-              borderRadius: 'var(--radius-sm)',
-              background: !isLogin ? 'var(--primary)' : 'transparent',
-              color: !isLogin ? '#fff' : 'var(--text-muted)',
-              fontWeight: 700,
-              fontSize: '0.875rem',
-              cursor: 'pointer',
-              transition: 'var(--transition-fast)'
-            }}
-          >
-            Register
-          </button>
-        </div>
-
         {error && (
-          <div style={{
-            background: 'rgba(239, 68, 68, 0.15)',
-            border: '1px solid rgba(239, 68, 68, 0.4)',
-            color: '#fca5a5',
-            padding: '0.75rem',
-            borderRadius: 'var(--radius-md)',
-            marginBottom: '1.25rem',
-            fontSize: '0.85rem'
-          }}>
+          <div style={{ backgroundColor: '#FBE8E8', border: '1px solid #E5A9A9', color: '#A93226', padding: '0.75rem', borderRadius: '4px', marginBottom: '1.25rem', fontSize: '0.85rem' }}>
             ⚠️ {error}
+          </div>
+        )}
+
+        {successMsg && (
+          <div style={{ backgroundColor: '#EAF4EC', border: '1px solid #BCE1C3', color: '#1E6B34', padding: '0.75rem', borderRadius: '4px', marginBottom: '1.25rem', fontSize: '0.85rem' }}>
+            ✅ {successMsg}
           </div>
         )}
 
         <form onSubmit={handleSubmit}>
           {!isLogin && (
             <div className="form-group">
-              <label className="form-label">Full Name</label>
-              <div style={{ position: 'relative' }}>
-                <input
-                  type="text"
-                  required
-                  placeholder="Alex Johnson"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  className="form-input"
-                  style={{ paddingLeft: '2.5rem' }}
-                />
-                <User size={18} color="var(--text-subtle)" style={{ position: 'absolute', left: '0.85rem', top: '50%', transform: 'translateY(-50%)' }} />
-              </div>
+              <label className="form-label">FULL NAME</label>
+              <input
+                type="text"
+                required
+                placeholder="Alex Johnson"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                className="form-input"
+              />
             </div>
           )}
 
           <div className="form-group">
-            <label className="form-label">Email Address</label>
-            <div style={{ position: 'relative' }}>
-              <input
-                type="email"
-                required
-                placeholder="member@fitness.com"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className="form-input"
-                style={{ paddingLeft: '2.5rem' }}
-              />
-              <Mail size={18} color="var(--text-subtle)" style={{ position: 'absolute', left: '0.85rem', top: '50%', transform: 'translateY(-50%)' }} />
-            </div>
+            <label className="form-label">EMAIL ADDRESS</label>
+            <input
+              type="email"
+              required
+              placeholder="member@fitness.com"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              className="form-input"
+            />
           </div>
 
           <div className="form-group">
-            <label className="form-label">Password</label>
-            <div style={{ position: 'relative' }}>
-              <input
-                type="password"
-                required
-                placeholder="••••••••"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="form-input"
-                style={{ paddingLeft: '2.5rem' }}
-              />
-              <Lock size={18} color="var(--text-subtle)" style={{ position: 'absolute', left: '0.85rem', top: '50%', transform: 'translateY(-50%)' }} />
-            </div>
+            <label className="form-label">PASSWORD</label>
+            <input
+              type="password"
+              required
+              placeholder="••••••••"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              className="form-input"
+            />
           </div>
 
           {!isLogin && (
             <>
               <div className="form-group">
-                <label className="form-label">Membership Tier</label>
-                <select
-                  value={membershipType}
-                  onChange={(e) => setMembershipType(e.target.value)}
-                  className="form-select"
-                >
-                  <option value="Basic">Basic ($29/mo - Access to Gym)</option>
-                  <option value="Premium">Premium ($59/mo - Classes + Trainers)</option>
-                  <option value="VIP">VIP ($99/mo - All Access Unlimited)</option>
+                <label className="form-label">MEMBERSHIP TYPE</label>
+                <select value={membershipType} onChange={(e) => setMembershipType(e.target.value)} className="form-select">
+                  <option value="Basic">Basic ($29/mo)</option>
+                  <option value="Premium">Premium ($59/mo)</option>
+                  <option value="VIP">VIP ($99/mo)</option>
                 </select>
               </div>
 
               <div className="form-group">
-                <label className="form-label">Account Role</label>
-                <select
-                  value={role}
-                  onChange={(e) => setRole(e.target.value)}
-                  className="form-select"
-                >
-                  <option value="member">Standard Gym Member</option>
-                  <option value="admin">Administrator / Manager</option>
+                <label className="form-label">ACCOUNT ROLE</label>
+                <select value={role} onChange={(e) => setRole(e.target.value)} className="form-select">
+                  <option value="member">Gym Member</option>
+                  <option value="admin">Administrator</option>
                 </select>
               </div>
             </>
@@ -260,16 +177,9 @@ const LoginPage = () => {
             type="submit"
             disabled={loading}
             className="btn btn-primary"
-            style={{ width: '100%', marginTop: '1rem', height: '48px', fontSize: '1rem' }}
+            style={{ width: '100%', marginTop: '1rem', height: '46px' }}
           >
-            {loading ? (
-              <span>Authenticating...</span>
-            ) : (
-              <>
-                <CheckCircle2 size={18} />
-                {isLogin ? 'Sign In Now' : 'Create Account'}
-              </>
-            )}
+            {loading ? 'PROCESSING...' : isLogin ? '[ SIGN IN NOW ]' : '[ REGISTER ACCOUNT ]'}
           </button>
         </form>
       </div>

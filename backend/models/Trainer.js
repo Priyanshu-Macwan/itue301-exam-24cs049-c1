@@ -1,6 +1,5 @@
 const mongoose = require('mongoose');
 
-// Trainer Mongoose Schema
 const trainerSchema = new mongoose.Schema(
   {
     name: {
@@ -12,6 +11,26 @@ const trainerSchema = new mongoose.Schema(
       type: String,
       required: [true, 'Specialization is required'],
       trim: true
+    },
+    bio: {
+      type: String,
+      default: 'Experienced fitness trainer dedicated to strength & movement.'
+    },
+    experienceYears: {
+      type: Number,
+      default: 5
+    },
+    rating: {
+      type: Number,
+      default: 4.9
+    },
+    hourlyRate: {
+      type: Number,
+      default: 65
+    },
+    image: {
+      type: String,
+      default: 'https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?auto=format&fit=crop&w=600&q=80'
     },
     available: {
       type: Boolean,

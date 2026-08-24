@@ -1,11 +1,10 @@
 const mongoose = require('mongoose');
 
-// Member Mongoose Schema
 const memberSchema = new mongoose.Schema(
   {
     name: {
       type: String,
-      required: [true, 'Member name is required'],
+      required: [true, 'Name is required'],
       trim: true
     },
     email: {
@@ -26,8 +25,8 @@ const memberSchema = new mongoose.Schema(
     },
     membershipType: {
       type: String,
-      enum: ['basic', 'premium', 'platinum'],
-      default: 'basic'
+      enum: ['Basic', 'Premium', 'VIP', 'basic', 'premium', 'platinum'],
+      default: 'Premium'
     },
     role: {
       type: String,
