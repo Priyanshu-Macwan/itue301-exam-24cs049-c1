@@ -19,13 +19,8 @@ const memberSchema = new mongoose.Schema(
       required: [true, 'Password is required'],
       select: false
     },
-    phone: {
-      type: String,
-      default: ''
-    },
     membershipType: {
       type: String,
-      enum: ['Basic', 'Premium', 'VIP', 'basic', 'premium', 'platinum'],
       default: 'Premium'
     },
     role: {

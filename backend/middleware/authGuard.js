@@ -20,17 +20,16 @@ const protect = async (req, res, next) => {
       if (!user) {
         return res.status(401).json({
           success: false,
-          error: 'User account not found'
+          message: 'User account not found'
         });
       }
 
       req.user = user;
-      req.member = user;
       return next();
     } catch (error) {
       return res.status(401).json({
         success: false,
-        error: 'Not authorized, token failed'
+        message: 'Not authorized, token failed'
       });
     }
   }
@@ -38,7 +37,7 @@ const protect = async (req, res, next) => {
   if (!token) {
     return res.status(401).json({
       success: false,
-      error: 'Not authorized, no Bearer token provided'
+      message: 'Not authorized, no Bearer token provided'
     });
   }
 };
@@ -49,7 +48,7 @@ const adminOnly = (req, res, next) => {
   } else {
     res.status(403).json({
       success: false,
-      error: 'Access denied: Admin privileges required'
+      message: 'Access denied: Admin privileges required'
     });
   }
 };

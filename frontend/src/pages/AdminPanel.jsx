@@ -8,17 +8,17 @@ const AdminPanel = () => {
   const [loading, setLoading] = useState(true);
   const [message, setMessage] = useState(null);
 
-  // Add Trainer Form State
+  // Form State
   const [trainerName, setTrainerName] = useState('');
   const [specialization, setSpecialization] = useState('HIIT & Cardio');
   const [bio, setBio] = useState('');
 
-  // Add Class Form State
   const [classTitle, setClassTitle] = useState('');
   const [category, setCategory] = useState('HIIT');
   const [selectedTrainerId, setSelectedTrainerId] = useState('');
   const [date, setDate] = useState('2026-08-28');
   const [timeSlot, setTimeSlot] = useState('09:00 AM - 10:00 AM');
+  const [capacity, setCapacity] = useState(20);
 
   useEffect(() => {
     fetchAdminData();
@@ -29,18 +29,18 @@ const AdminPanel = () => {
     try {
       const [tRes, cRes] = await Promise.all([
         fetch('/api/trainers'),
-        fetch('/api/bookings/classes')
+        fetch('/api/classes')
       ]);
       const tData = await tRes.json();
       const cData = await cRes.json();
 
-      const trainersList = Array.isArray(tData) ? tData : tData.trainers || [];
+      const trainersList = Array.isArray(tData) ? tData : [];
       setTrainers(trainersList);
       if (trainersList.length > 0 && !selectedTrainerId) {
         setSelectedTrainerId(trainersList[0]._id);
       }
 
-      setClasses(Array.isArray(cData) ? cData : cData.classes || []);
+      setClasses(Array.isArray(cData) ? cData : []);
     } catch (err) {
       console.error('Error loading admin data:', err);
     } finally {
@@ -62,12 +62,12 @@ const AdminPanel = () => {
       });
       const data = await res.json();
       if (res.ok) {
-        setMessage({ success: true, text: `Trainer "${trainerName}" added to MongoDB Atlas!` });
+        setMessage({ success: true, text: `Trainer "${trainerName}" created in MongoDB Atlas!` });
         setTrainerName('');
         setBio('');
         fetchAdminData();
       } else {
-        setMessage({ success: false, text: data.message || data.error || 'Failed to add trainer' });
+        setMessage({ success: false, text: data.message || 'Failed to add trainer' });
       }
     } catch (err) {
       setMessage({ success: false, text: 'Error adding trainer' });
@@ -78,7 +78,7 @@ const AdminPanel = () => {
     e.preventDefault();
     setMessage(null);
     try {
-      const res = await fetch('/api/bookings/classes', {
+      const res = await fetch('/api/classes', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -86,20 +86,20 @@ const AdminPanel = () => {
         },
         body: JSON.stringify({
           title: classTitle,
-          className: classTitle,
           category,
           trainerId: selectedTrainerId,
           date,
-          timeSlot
+          timeSlot,
+          capacity: Number(capacity)
         })
       });
       const data = await res.json();
       if (res.ok) {
-        setMessage({ success: true, text: `Class "${classTitle}" created successfully!` });
+        setMessage({ success: true, text: `Fitness Class "${classTitle}" created!` });
         setClassTitle('');
         fetchAdminData();
       } else {
-        setMessage({ success: false, text: data.message || data.error || 'Failed to create class' });
+        setMessage({ success: false, text: data.message || 'Failed to create class' });
       }
     } catch (err) {
       setMessage({ success: false, text: 'Error creating class' });
@@ -120,15 +120,15 @@ const AdminPanel = () => {
   };
 
   const handleDeleteClass = async (id) => {
-    if (!window.confirm('Cancel/Delete fitness class schedule?')) return;
+    if (!window.confirm('Delete/Cancel fitness class schedule?')) return;
     try {
-      const res = await fetch(`/api/bookings/${id}`, {
+      const res = await fetch(`/api/classes/${id}`, {
         method: 'DELETE',
         headers: { Authorization: `Bearer ${token}` }
       });
       if (res.ok) fetchAdminData();
     } catch (err) {
-      alert('Error cancelling class');
+      alert('Error deleting class');
     }
   };
 
@@ -136,8 +136,26 @@ const AdminPanel = () => {
     <div className="container" style={{ padding: '2.5rem 1.5rem' }}>
       <div style={{ marginBottom: '2rem' }}>
         <div className="editorial-kicker">MANAGEMENT PORTAL (PROTECTED + ADMIN ONLY)</div>
-        <h1 className="editorial-title">ADMINISTRATOR CONTROL PANEL.</h1>
-        <p className="editorial-subtitle">Add trainers, publish class schedules, and manage gym sessions.</p>
+        <h1 className="editorial-title">ADMINISTRATOR DASHBOARD.</h1>
+        <p className="editorial-subtitle">Manage trainers, publish class schedules, and review stats.</p>
+      </div>
+
+      {/* Stats Section */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '1.25rem', marginBottom: '2.5rem' }}>
+        <div className="editorial-card" style={{ padding: '1.25rem', textAlign: 'center' }}>
+          <div style={{ fontSize: '0.75rem', fontWeight: 800, color: '#6B705C' }}>TOTAL TRAINERS</div>
+          <div style={{ fontSize: '2rem', fontWeight: 900, color: '#17231D' }}>{trainers.length}</div>
+        </div>
+        <div className="editorial-card" style={{ padding: '1.25rem', textAlign: 'center' }}>
+          <div style={{ fontSize: '0.75rem', fontWeight: 800, color: '#6B705C' }}>ACTIVE CLASSES</div>
+          <div style={{ fontSize: '2rem', fontWeight: 900, color: '#17231D' }}>{classes.length}</div>
+        </div>
+        <div className="editorial-card" style={{ padding: '1.25rem', textAlign: 'center' }}>
+          <div style={{ fontSize: '0.75rem', fontWeight: 800, color: '#6B705C' }}>TOTAL CAPACITY</div>
+          <div style={{ fontSize: '2rem', fontWeight: 900, color: '#D96C3F' }}>
+            {classes.reduce((sum, c) => sum + (c.capacity || 20), 0)}
+          </div>
+        </div>
       </div>
 
       {message && (
@@ -157,7 +175,7 @@ const AdminPanel = () => {
       {/* Forms Section */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(360px, 1fr))', gap: '2rem', marginBottom: '2.5rem' }}>
         
-        {/* Form 1: Add Trainer */}
+        {/* Add Trainer Form */}
         <div className="editorial-card">
           <div className="editorial-kicker">TRAINER MANAGEMENT</div>
           <h3 style={{ fontSize: '1.2rem', fontWeight: 900, marginBottom: '1rem', color: '#17231D' }}>
@@ -203,11 +221,11 @@ const AdminPanel = () => {
           </form>
         </div>
 
-        {/* Form 2: Create Class */}
+        {/* Create Class Form */}
         <div className="editorial-card">
           <div className="editorial-kicker">CLASS MANAGEMENT</div>
           <h3 style={{ fontSize: '1.2rem', fontWeight: 900, marginBottom: '1rem', color: '#17231D' }}>
-            CREATE CLASS SCHEDULE
+            CREATE FITNESS CLASS
           </h3>
           <form onSubmit={handleCreateClass}>
             <div className="form-group">
@@ -252,7 +270,7 @@ const AdminPanel = () => {
       {/* Tables Section */}
       <div className="editorial-card" style={{ marginBottom: '2rem' }}>
         <h3 style={{ fontSize: '1.15rem', fontWeight: 900, marginBottom: '1rem', color: '#17231D' }}>
-          CLUB TRAINERS ({trainers.length})
+          MANAGED TRAINERS ({trainers.length})
         </h3>
         <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.85rem' }}>
           <thead>
@@ -286,7 +304,7 @@ const AdminPanel = () => {
 
       <div className="editorial-card">
         <h3 style={{ fontSize: '1.15rem', fontWeight: 900, marginBottom: '1rem', color: '#17231D' }}>
-          SCHEDULED CLASSES ({classes.length})
+          PUBLISHED CLASSES ({classes.length})
         </h3>
         <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.85rem' }}>
           <thead>
@@ -294,20 +312,22 @@ const AdminPanel = () => {
               <th style={{ padding: '0.75rem' }}>CLASS TITLE</th>
               <th style={{ padding: '0.75rem' }}>TRAINER</th>
               <th style={{ padding: '0.75rem' }}>DATE & TIME</th>
+              <th style={{ padding: '0.75rem' }}>SPOTS</th>
               <th style={{ padding: '0.75rem', textAlign: 'right' }}>ACTION</th>
             </tr>
           </thead>
           <tbody>
             {classes.map((c) => (
               <tr key={c._id} style={{ borderBottom: '1px solid #DCD6CD' }}>
-                <td style={{ padding: '0.75rem', fontWeight: 700 }}>{c.title || c.className}</td>
+                <td style={{ padding: '0.75rem', fontWeight: 700 }}>{c.title}</td>
                 <td style={{ padding: '0.75rem', color: '#6B705C' }}>
-                  {(c.trainer && c.trainer.name) || (c.trainerId && c.trainerId.name) || 'Assigned Trainer'}
+                  {c.trainer ? c.trainer.name : 'Assigned Trainer'}
                 </td>
                 <td style={{ padding: '0.75rem' }}>{c.date} ({c.timeSlot})</td>
+                <td style={{ padding: '0.75rem' }}>{c.availableSpots} / {c.capacity}</td>
                 <td style={{ padding: '0.75rem', textAlign: 'right' }}>
                   <button onClick={() => handleDeleteClass(c._id)} className="btn btn-primary btn-sm" style={{ backgroundColor: '#A93226' }}>
-                    CANCEL CLASS
+                    DELETE CLASS
                   </button>
                 </td>
               </tr>

@@ -6,7 +6,6 @@ import LoginPage from './pages/LoginPage';
 import ClassesPage from './pages/ClassesPage';
 import MyBookingsPage from './pages/MyBookingsPage';
 
-// Lazy load AdminPanel using React.lazy and Suspense
 const AdminPanel = lazy(() => import('./pages/AdminPanel'));
 
 function App() {
@@ -16,12 +15,10 @@ function App() {
 
       <main style={{ flex: 1 }}>
         <Routes>
-          {/* Public Authentication Routes */}
           <Route path="/" element={<LoginPage />} />
           <Route path="/login" element={<LoginPage />} />
           <Route path="/register" element={<LoginPage />} />
 
-          {/* Protected Member Routes */}
           <Route
             path="/classes"
             element={
@@ -40,14 +37,13 @@ function App() {
             }
           />
 
-          {/* Protected Lazy-Loaded Admin Route */}
           <Route
             path="/admin"
             element={
-              <ProtectedRoute>
+              <ProtectedRoute adminOnly={true}>
                 <Suspense fallback={
                   <div style={{ textAlign: 'center', padding: '4rem', color: '#6B705C' }}>
-                    <p>Loading Admin Panel...</p>
+                    <p>Loading Admin Dashboard...</p>
                   </div>
                 }>
                   <AdminPanel />
@@ -56,7 +52,6 @@ function App() {
             }
           />
 
-          {/* Redirect unknown paths */}
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </main>

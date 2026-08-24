@@ -11,7 +11,7 @@ export const AuthProvider = ({ children }) => {
   const [role, setRole] = useState(() => localStorage.getItem('role') || 'member');
   const [loading, setLoading] = useState(false);
 
-  // Sync profile on mount if token exists
+  // Restore & verify user on mount if token exists
   useEffect(() => {
     if (token && !user) {
       fetch('/api/auth/me', {
@@ -23,34 +23,34 @@ export const AuthProvider = ({ children }) => {
             setUser(data.user);
             setRole(data.user.role || 'member');
             localStorage.setItem('user', JSON.stringify(data.user));
+            localStorage.setItem('role', data.user.role || 'member');
           }
         })
         .catch(() => {});
     }
   }, [token]);
 
-  const register = async (name, email, password, membershipType = 'Premium', role = 'member') => {
+  const register = async (name, email, password, membershipType = 'Premium') => {
     setLoading(true);
     try {
       const res = await fetch('/api/auth/register', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name, email, password, membershipType, role })
+        body: JSON.stringify({ name, email, password, membershipType })
       });
       const data = await res.json();
 
       if (!res.ok || !data.success) {
-        throw new Error(data.message || data.error || 'Registration failed');
+        throw new Error(data.message || 'Registration failed');
       }
 
-      const userData = data.user || data.member;
-      setUser(userData);
+      setUser(data.user);
       setToken(data.token);
-      setRole(data.role || userData.role || 'member');
+      setRole('member');
 
-      localStorage.setItem('user', JSON.stringify(userData));
+      localStorage.setItem('user', JSON.stringify(data.user));
       localStorage.setItem('token', data.token);
-      localStorage.setItem('role', data.role || userData.role || 'member');
+      localStorage.setItem('role', 'member');
 
       return data;
     } catch (err) {
@@ -70,18 +70,17 @@ export const AuthProvider = ({ children }) => {
       });
       const data = await res.json();
 
-      if (!res.ok || (!data.success && !data.token)) {
-        throw new Error(data.message || data.error || 'Login failed. Invalid credentials.');
+      if (!res.ok || !data.success) {
+        throw new Error(data.message || 'Login failed. Invalid credentials.');
       }
 
-      const userData = data.user || data.member;
-      setUser(userData);
+      setUser(data.user);
       setToken(data.token);
-      setRole(data.role || userData.role || 'member');
+      setRole(data.user.role || 'member');
 
-      localStorage.setItem('user', JSON.stringify(userData));
+      localStorage.setItem('user', JSON.stringify(data.user));
       localStorage.setItem('token', data.token);
-      localStorage.setItem('role', data.role || userData.role || 'member');
+      localStorage.setItem('role', data.user.role || 'member');
 
       return data;
     } catch (err) {

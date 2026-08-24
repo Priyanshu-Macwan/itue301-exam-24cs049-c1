@@ -1,6 +1,7 @@
 const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
+const bcrypt = require('bcryptjs');
 const dotenv = require('dotenv');
 
 dotenv.config();
@@ -10,28 +11,27 @@ const { errorHandler, notFound } = require('./middleware/errorHandler');
 
 const Member = require('./models/Member');
 const Trainer = require('./models/Trainer');
-const ClassBooking = require('./models/ClassBooking');
+const FitnessClass = require('./models/FitnessClass');
+const Booking = require('./models/Booking');
 
 const authRoutes = require('./routes/authRoutes');
 const trainerRoutes = require('./routes/trainerRoutes');
+const classRoutes = require('./routes/classRoutes');
 const bookingRoutes = require('./routes/bookingRoutes');
 
 const app = express();
 
-// 1. Global Request Logger Middleware (MUST use res.on('finish'))
+// Middlewares
 app.use(requestLogger);
-
-// 2. Global CORS & JSON Body Parser
 app.use(cors());
 app.use(express.json());
 
-// Seeder for Atlas database if empty
-const seedInitialData = async () => {
+// Seed initial data when MongoDB Atlas database is empty
+const seedDatabase = async () => {
   try {
     const memberCount = await Member.countDocuments();
     if (memberCount === 0) {
-      console.log('🌱 Seeding initial members into MongoDB Atlas...');
-      const bcrypt = require('bcryptjs');
+      console.log('🌱 Seeding demo accounts into MongoDB Atlas...');
       const salt = await bcrypt.genSalt(10);
       const memberPass = await bcrypt.hash('password123', salt);
       const adminPass = await bcrypt.hash('admin123', salt);
@@ -41,26 +41,25 @@ const seedInitialData = async () => {
           name: 'Alex Johnson',
           email: 'member@fitness.com',
           password: memberPass,
-          phone: '+1 555-0199',
           membershipType: 'VIP',
           role: 'member'
         },
         {
-          name: 'Sarah Connor (Admin)',
+          name: 'Sarah Connor',
           email: 'admin@fitness.com',
           password: adminPass,
-          phone: '+1 555-0200',
           membershipType: 'VIP',
           role: 'admin'
         }
       ]);
-      console.log('✅ Demo accounts created: member@fitness.com / admin@fitness.com');
+      console.log('✅ Demo accounts seeded: member@fitness.com / admin@fitness.com');
     }
 
     const trainerCount = await Trainer.countDocuments();
+    let sampleTrainers = [];
     if (trainerCount === 0) {
       console.log('🌱 Seeding initial trainers into MongoDB Atlas...');
-      await Trainer.insertMany([
+      sampleTrainers = await Trainer.insertMany([
         {
           name: 'Marcus Vance',
           specialization: 'HIIT & Cardio',
@@ -103,43 +102,85 @@ const seedInitialData = async () => {
         }
       ]);
       console.log('✅ Trainers seeded in Atlas');
+    } else {
+      sampleTrainers = await Trainer.find();
+    }
+
+    const classCount = await FitnessClass.countDocuments();
+    if (classCount === 0 && sampleTrainers.length > 0) {
+      console.log('🌱 Seeding initial fitness classes into MongoDB Atlas...');
+      await FitnessClass.insertMany([
+        {
+          title: 'Extreme HIIT Burnout',
+          category: 'HIIT',
+          trainer: sampleTrainers[0]._id,
+          date: '2026-08-25',
+          timeSlot: '08:00 AM - 09:00 AM',
+          location: 'Studio A - High Tech Zone',
+          capacity: 20,
+          availableSpots: 18,
+          status: 'Scheduled'
+        },
+        {
+          title: 'Morning Vinyasa Flow & Zen',
+          category: 'Yoga',
+          trainer: sampleTrainers[1]._id,
+          date: '2026-08-25',
+          timeSlot: '07:00 AM - 08:15 AM',
+          location: 'Zen Sanctuary Studio',
+          capacity: 20,
+          availableSpots: 20,
+          status: 'Scheduled'
+        },
+        {
+          title: 'Hyper-Strength Hypertrophy',
+          category: 'Strength',
+          trainer: sampleTrainers[2]._id,
+          date: '2026-08-26',
+          timeSlot: '05:00 PM - 06:30 PM',
+          location: 'Iron Pit Gym Floor',
+          capacity: 15,
+          availableSpots: 15,
+          status: 'Scheduled'
+        },
+        {
+          title: 'Core Sculpt & Reformer Pilates',
+          category: 'Pilates',
+          trainer: sampleTrainers[3]._id,
+          date: '2026-08-26',
+          timeSlot: '10:00 AM - 11:00 AM',
+          location: 'Studio B - Reformer Room',
+          capacity: 10,
+          availableSpots: 10,
+          status: 'Scheduled'
+        }
+      ]);
+      console.log('✅ Fitness classes seeded in Atlas');
     }
   } catch (err) {
-    console.error('⚠️ Atlas Seed Note:', err.message);
+    console.error('⚠️ Database seed error:', err.message);
   }
 };
 
-// Priority 2: Connect to MongoDB Atlas via process.env.MONGO_URI
+// Connect MongoDB Atlas
 const connectDatabase = async () => {
   const mongoUri = process.env.MONGO_URI || 'mongodb://127.0.0.1:27017/fitness_db';
   try {
-    await mongoose.connect(mongoUri, { serverSelectionTimeoutMS: 5000 });
-    console.log('⚡ MongoDB connected successfully Server running on port 5000');
-    await seedInitialData();
+    await mongoose.connect(mongoUri);
+    console.log('⚡ MongoDB connected successfully');
+    await seedDatabase();
   } catch (err) {
-    console.error('❌ MongoDB Atlas Connection Error:', err.message);
+    console.error('❌ MongoDB connection failed:', err.message);
   }
 };
 
-// Mount API Routes for both /api and /api/v1 prefixes
+// Mount REST API Routes
 app.use('/api/auth', authRoutes);
-app.use('/api/v1/auth', authRoutes);
-
 app.use('/api/trainers', trainerRoutes);
-app.use('/api/v1/trainers', trainerRoutes);
-
+app.use('/api/classes', classRoutes);
 app.use('/api/bookings', bookingRoutes);
-app.use('/api/v1/bookings', bookingRoutes);
 
-// Health Check Endpoint
-app.get('/api/health', (req, res) => {
-  res.json({ status: 'online', system: 'FitZone Gym API' });
-});
-app.get('/api/v1/health', (req, res) => {
-  res.json({ status: 'online', system: 'FitZone Gym API v1' });
-});
-
-// Priority 6: Global Error Handling Middleware (MUST BE LAST)
+// Error Middlewares
 app.use(notFound);
 app.use(errorHandler);
 

@@ -2,9 +2,7 @@ const express = require('express');
 const router = express.Router();
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
-const mongoose = require('mongoose');
 const Member = require('../models/Member');
-const store = require('../store');
 const { protect } = require('../middleware/authGuard');
 
 const generateToken = (id) => {
@@ -15,12 +13,12 @@ const generateToken = (id) => {
   );
 };
 
-// @route   POST /api/auth/register & /api/v1/auth/register
-// @desc    Register a new member with bcrypt password hashing
+// @route   POST /api/auth/register
+// @desc    Public Signup — Creates a member account in MongoDB Atlas (Always forces role = member)
 // @access  Public
 router.post('/register', async (req, res, next) => {
   try {
-    const { name, email, password, membershipType, role } = req.body;
+    const { name, email, password, membershipType } = req.body;
 
     if (!name || !email || !password) {
       return res.status(400).json({
@@ -29,91 +27,59 @@ router.post('/register', async (req, res, next) => {
       });
     }
 
-    const salt = await bcrypt.genSalt(10);
-    const hashedPassword = await bcrypt.hash(password, salt);
-    let member;
-
-    if (mongoose.connection.readyState === 1) {
-      const memberExists = await Member.findOne({ email: email.toLowerCase() });
-      if (memberExists) {
-        return res.status(400).json({
-          success: false,
-          message: 'An account with this email already exists'
-        });
-      }
-
-      member = await Member.create({
-        name,
-        email: email.toLowerCase(),
-        password: hashedPassword,
-        membershipType: membershipType || 'Premium',
-        role: role === 'admin' ? 'admin' : 'member'
+    const memberExists = await Member.findOne({ email: email.toLowerCase() });
+    if (memberExists) {
+      return res.status(400).json({
+        success: false,
+        message: 'An account with this email already exists'
       });
-    } else {
-      const memberExists = store.members.find((m) => m.email === email.toLowerCase());
-      if (memberExists) {
-        return res.status(400).json({
-          success: false,
-          message: 'An account with this email already exists'
-        });
-      }
-
-      member = {
-        _id: 'mem_' + Date.now(),
-        name,
-        email: email.toLowerCase(),
-        password: hashedPassword,
-        membershipType: membershipType || 'Premium',
-        role: role === 'admin' ? 'admin' : 'member',
-        createdAt: new Date()
-      };
-      store.members.push(member);
     }
 
-    const token = generateToken(member._id);
+    const salt = await bcrypt.genSalt(10);
+    const hashedPassword = await bcrypt.hash(password, salt);
 
-    const userPayload = {
-      id: member._id,
-      _id: member._id,
-      name: member.name,
-      email: member.email,
-      role: member.role,
-      membershipType: member.membershipType
-    };
+    // SECURITY: Public registration ALWAYS forces role = 'member'
+    const member = await Member.create({
+      name,
+      email: email.toLowerCase(),
+      password: hashedPassword,
+      membershipType: membershipType || 'Premium',
+      role: 'member'
+    });
+
+    const token = generateToken(member._id);
 
     res.status(201).json({
       success: true,
       token,
-      user: userPayload,
-      member: userPayload,
-      role: member.role
+      user: {
+        _id: member._id,
+        name: member.name,
+        email: member.email,
+        role: member.role,
+        membershipType: member.membershipType
+      }
     });
   } catch (error) {
     next(error);
   }
 });
 
-// @route   POST /api/auth/login & /api/v1/auth/login
-// @desc    Authenticate member & return JWT token
+// @route   POST /api/auth/login
+// @desc    Authenticate member or admin using email & password
 // @access  Public
 router.post('/login', async (req, res, next) => {
   try {
     const { email, password } = req.body;
 
-    if (!email) {
+    if (!email || !password) {
       return res.status(400).json({
         success: false,
-        message: 'Please provide an email address'
+        message: 'Please provide email and password'
       });
     }
 
-    let member;
-    if (mongoose.connection.readyState === 1) {
-      member = await Member.findOne({ email: email.toLowerCase() }).select('+password');
-    } else {
-      member = store.members.find((m) => m.email === email.toLowerCase());
-    }
-
+    const member = await Member.findOne({ email: email.toLowerCase() }).select('+password');
     if (!member) {
       return res.status(401).json({
         success: false,
@@ -121,48 +87,40 @@ router.post('/login', async (req, res, next) => {
       });
     }
 
-    if (password && member.password) {
-      const isMatch = await bcrypt.compare(password, member.password);
-      if (!isMatch) {
-        return res.status(401).json({
-          success: false,
-          message: 'Invalid credentials'
-        });
-      }
+    const isMatch = await bcrypt.compare(password, member.password);
+    if (!isMatch) {
+      return res.status(401).json({
+        success: false,
+        message: 'Invalid credentials'
+      });
     }
 
     const token = generateToken(member._id);
 
-    const userPayload = {
-      id: member._id,
-      _id: member._id,
-      name: member.name,
-      email: member.email,
-      role: member.role,
-      membershipType: member.membershipType
-    };
-
     res.status(200).json({
       success: true,
       token,
-      user: userPayload,
-      member: userPayload,
-      role: member.role
+      user: {
+        _id: member._id,
+        name: member.name,
+        email: member.email,
+        role: member.role,
+        membershipType: member.membershipType
+      }
     });
   } catch (error) {
     next(error);
   }
 });
 
-// @route   GET /api/auth/me & /api/v1/auth/me
+// @route   GET /api/auth/me
 // @desc    Get current user profile
-// @access  Private
+// @access  Private (protect)
 router.get('/me', protect, async (req, res, next) => {
   try {
-    res.json({
+    res.status(200).json({
       success: true,
       user: {
-        id: req.user._id,
         _id: req.user._id,
         name: req.user.name,
         email: req.user.email,

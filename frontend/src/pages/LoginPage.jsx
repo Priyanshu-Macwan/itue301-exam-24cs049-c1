@@ -8,7 +8,6 @@ const LoginPage = () => {
   const [email, setEmail] = useState('member@fitness.com');
   const [password, setPassword] = useState('password123');
   const [membershipType, setMembershipType] = useState('Premium');
-  const [role, setRole] = useState('member');
   const [error, setError] = useState('');
   const [successMsg, setSuccessMsg] = useState('');
 
@@ -25,9 +24,9 @@ const LoginPage = () => {
         await login(email, password);
         navigate('/classes');
       } else {
-        await register(name, email, password, membershipType, role);
-        setSuccessMsg('Account created & stored in MongoDB Atlas! Redirecting...');
-        setTimeout(() => navigate('/classes'), 1200);
+        await register(name, email, password, membershipType);
+        setSuccessMsg('Account created & saved in MongoDB Atlas! Redirecting...');
+        setTimeout(() => navigate('/classes'), 1000);
       }
     } catch (err) {
       setError(err.message || 'Authentication failed');
@@ -54,7 +53,7 @@ const LoginPage = () => {
             {isLogin ? 'MEMBER LOGIN' : 'CREATE ACCOUNT'}
           </h2>
           <p className="editorial-subtitle">
-            {isLogin ? 'Enter your credentials to access gym classes.' : 'Sign up to register your account in MongoDB Atlas.'}
+            {isLogin ? 'Enter credentials to access fitness classes.' : 'Sign up to register a new member account in MongoDB Atlas.'}
           </p>
         </div>
 
@@ -80,7 +79,7 @@ const LoginPage = () => {
 
         {/* Demo Accounts Quick Fill */}
         <div style={{ backgroundColor: '#F4F0E8', padding: '0.75rem', borderRadius: '4px', marginBottom: '1.25rem', fontSize: '0.8rem' }}>
-          <div style={{ fontWeight: 800, color: '#17231D', marginBottom: '0.35rem' }}>⚡ QUICK DEMO LOGINS</div>
+          <div style={{ fontWeight: 800, color: '#17231D', marginBottom: '0.35rem' }}>⚡ DEMO LOGIN ACCOUNTS</div>
           <div style={{ display: 'flex', gap: '0.5rem' }}>
             <button
               type="button"
@@ -153,24 +152,14 @@ const LoginPage = () => {
           </div>
 
           {!isLogin && (
-            <>
-              <div className="form-group">
-                <label className="form-label">MEMBERSHIP TYPE</label>
-                <select value={membershipType} onChange={(e) => setMembershipType(e.target.value)} className="form-select">
-                  <option value="Basic">Basic ($29/mo)</option>
-                  <option value="Premium">Premium ($59/mo)</option>
-                  <option value="VIP">VIP ($99/mo)</option>
-                </select>
-              </div>
-
-              <div className="form-group">
-                <label className="form-label">ACCOUNT ROLE</label>
-                <select value={role} onChange={(e) => setRole(e.target.value)} className="form-select">
-                  <option value="member">Gym Member</option>
-                  <option value="admin">Administrator</option>
-                </select>
-              </div>
-            </>
+            <div className="form-group">
+              <label className="form-label">MEMBERSHIP TYPE</label>
+              <select value={membershipType} onChange={(e) => setMembershipType(e.target.value)} className="form-select">
+                <option value="Basic">Basic ($29/mo)</option>
+                <option value="Premium">Premium ($59/mo)</option>
+                <option value="VIP">VIP ($99/mo)</option>
+              </select>
+            </div>
           )}
 
           <button

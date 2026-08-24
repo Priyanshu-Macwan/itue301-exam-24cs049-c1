@@ -14,7 +14,7 @@ const trainerSchema = new mongoose.Schema(
     },
     bio: {
       type: String,
-      default: 'Experienced fitness trainer dedicated to strength & movement.'
+      default: 'Experienced fitness coach dedicated to strength, endurance, and overall wellness.'
     },
     experienceYears: {
       type: Number,

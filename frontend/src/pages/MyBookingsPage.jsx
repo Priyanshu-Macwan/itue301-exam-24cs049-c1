@@ -21,12 +21,12 @@ const MyBookingsPage = () => {
       const data = await res.json();
 
       if (!res.ok) {
-        throw new Error(data.message || data.error || 'Failed to load bookings');
+        throw new Error(data.message || 'Failed to load member bookings');
       }
 
-      setBookings(Array.isArray(data) ? data : data.bookings || []);
+      setBookings(Array.isArray(data) ? data : []);
     } catch (err) {
-      setError(err.message || 'Error fetching member bookings');
+      setError(err.message || 'Error loading member bookings');
     } finally {
       setLoading(false);
     }
@@ -45,7 +45,7 @@ const MyBookingsPage = () => {
       const data = await res.json();
 
       if (!res.ok) {
-        throw new Error(data.message || data.error || 'Failed to cancel booking');
+        throw new Error(data.message || 'Failed to cancel booking');
       }
 
       setBookings(bookings.filter((b) => b._id !== bookingId));
@@ -57,10 +57,10 @@ const MyBookingsPage = () => {
   return (
     <div className="container" style={{ padding: '2.5rem 1.5rem' }}>
       <div style={{ marginBottom: '2rem' }}>
-        <div className="editorial-kicker">MEMBER PORTAL</div>
-        <h1 className="editorial-title">MY SCHEDULED SESSIONS.</h1>
+        <div className="editorial-kicker">MEMBER SCHEDULE</div>
+        <h1 className="editorial-title">MY RESERVED SESSIONS.</h1>
         <p className="editorial-subtitle">
-          Active class reservations for <strong>{user?.name || user?.email}</strong>.
+          Active class bookings for <strong>{user?.name || user?.email}</strong>.
         </p>
       </div>
 
@@ -78,9 +78,9 @@ const MyBookingsPage = () => {
 
       {!loading && !error && bookings.length === 0 && (
         <div className="editorial-card" style={{ textAlign: 'center', padding: '3rem 2rem' }}>
-          <h3 style={{ fontSize: '1.2rem', fontWeight: 800, color: '#17231D' }}>NO ACTIVE RESERVATIONS</h3>
+          <h3 style={{ fontSize: '1.2rem', fontWeight: 800, color: '#17231D' }}>NO ACTIVE BOOKINGS</h3>
           <p style={{ color: '#6B705C', fontSize: '0.9rem', marginTop: '0.4rem' }}>
-            You haven't reserved any fitness class sessions yet.
+            You have not booked any fitness class sessions yet.
           </p>
         </div>
       )}
@@ -88,28 +88,29 @@ const MyBookingsPage = () => {
       {!loading && !error && bookings.length > 0 && (
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '1.5rem' }}>
           {bookings.map((b) => {
-            const trainerObj = b.trainerId || b.trainer || {};
-            const titleText = b.className || b.title || 'Fitness Session';
+            const cls = b.fitnessClass || {};
+            const trainerObj = cls.trainer || {};
 
             return (
               <div key={b._id} className="editorial-card">
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '0.75rem' }}>
                   <div>
-                    <span style={{ fontSize: '0.7rem', fontWeight: 800, color: '#6B705C', textTransform: 'uppercase' }}>CLASS</span>
+                    <span style={{ fontSize: '0.7rem', fontWeight: 800, color: '#6B705C', textTransform: 'uppercase' }}>
+                      {cls.category || 'FITNESS'}
+                    </span>
                     <h3 style={{ fontSize: '1.2rem', fontWeight: 800, color: '#17231D', margin: '0.2rem 0' }}>
-                      {titleText}
+                      {cls.title || 'Class Session'}
                     </h3>
                   </div>
-                  <span className={`badge ${(b.status === 'booked' || b.status === 'Scheduled') ? 'badge-available' : 'badge-booked'}`}>
-                    {(b.status || 'booked').toUpperCase()}
+                  <span className="badge badge-available">
+                    {(b.status || 'confirmed').toUpperCase()}
                   </span>
                 </div>
 
                 <div style={{ background: '#F4F0E8', padding: '0.75rem', borderRadius: '4px', fontSize: '0.85rem', color: '#17231D', display: 'flex', flexDirection: 'column', gap: '0.35rem', marginBottom: '1rem' }}>
-                  <div>💪 <strong>Trainer:</strong> {trainerObj.name || 'Assigned Trainer'}</div>
-                  <div>🏷️ <strong>Specialization:</strong> {trainerObj.specialization || 'Fitness'}</div>
-                  <div>🗓️ <strong>Date:</strong> {b.date}</div>
-                  <div>⏰ <strong>Time Slot:</strong> {b.timeSlot}</div>
+                  <div>💪 <strong>Trainer:</strong> {trainerObj.name || 'Assigned Trainer'} ({trainerObj.specialization || 'Fitness'})</div>
+                  <div>🗓️ <strong>Date:</strong> {cls.date || 'Scheduled Date'}</div>
+                  <div>⏰ <strong>Time Slot:</strong> {cls.timeSlot || 'Scheduled Time'}</div>
                 </div>
 
                 <button
