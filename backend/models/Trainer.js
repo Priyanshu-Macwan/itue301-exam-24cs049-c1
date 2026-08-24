@@ -38,7 +38,8 @@ const trainerSchema = new mongoose.Schema(
     }
   },
   {
-    timestamps: true
+    timestamps: true,
+    collection: 'trainers'
   }
 );
 

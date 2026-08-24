@@ -30,7 +30,8 @@ const memberSchema = new mongoose.Schema(
     }
   },
   {
-    timestamps: true
+    timestamps: true,
+    collection: 'members'
   }
 );
 

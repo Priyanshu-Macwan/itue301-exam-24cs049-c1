@@ -44,7 +44,8 @@ const fitnessClassSchema = new mongoose.Schema(
     }
   },
   {
-    timestamps: true
+    timestamps: true,
+    collection: 'fitnessclasses'
   }
 );
 

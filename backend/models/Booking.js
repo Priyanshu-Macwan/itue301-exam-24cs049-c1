@@ -19,11 +19,11 @@ const bookingSchema = new mongoose.Schema(
     }
   },
   {
-    timestamps: true
+    timestamps: true,
+    collection: 'bookings'
   }
 );
 
-// Ensure a member cannot book the exact same class twice
 bookingSchema.index({ member: 1, fitnessClass: 1 }, { unique: true });
 
 module.exports = mongoose.model('Booking', bookingSchema);
