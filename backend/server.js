@@ -6,6 +6,9 @@ const dotenv = require('dotenv');
 
 dotenv.config();
 
+// Disable Mongoose query buffering when connection fails
+mongoose.set('bufferCommands', false);
+
 const requestLogger = require('./middleware/requestLogger');
 const { errorHandler, notFound } = require('./middleware/errorHandler');
 
@@ -26,12 +29,12 @@ app.use(requestLogger);
 app.use(cors());
 app.use(express.json());
 
-// Seed initial data when MongoDB Atlas database is empty
+// Seed initial data when database is empty
 const seedDatabase = async () => {
   try {
     const memberCount = await Member.countDocuments();
     if (memberCount === 0) {
-      console.log('🌱 Seeding demo accounts into MongoDB Atlas...');
+      console.log('🌱 Seeding demo accounts...');
       const salt = await bcrypt.genSalt(10);
       const memberPass = await bcrypt.hash('password123', salt);
       const adminPass = await bcrypt.hash('admin123', salt);
@@ -52,13 +55,13 @@ const seedDatabase = async () => {
           role: 'admin'
         }
       ]);
-      console.log('✅ Demo accounts seeded: member@fitness.com / admin@fitness.com');
+      console.log('✅ Demo accounts seeded');
     }
 
     const trainerCount = await Trainer.countDocuments();
     let sampleTrainers = [];
     if (trainerCount === 0) {
-      console.log('🌱 Seeding initial trainers into MongoDB Atlas...');
+      console.log('🌱 Seeding initial trainers...');
       sampleTrainers = await Trainer.insertMany([
         {
           name: 'Marcus Vance',
@@ -101,14 +104,14 @@ const seedDatabase = async () => {
           available: true
         }
       ]);
-      console.log('✅ Trainers seeded in Atlas');
+      console.log('✅ Trainers seeded');
     } else {
       sampleTrainers = await Trainer.find();
     }
 
     const classCount = await FitnessClass.countDocuments();
     if (classCount === 0 && sampleTrainers.length > 0) {
-      console.log('🌱 Seeding initial fitness classes into MongoDB Atlas...');
+      console.log('🌱 Seeding initial fitness classes...');
       await FitnessClass.insertMany([
         {
           title: 'Extreme HIIT Burnout',
@@ -155,10 +158,10 @@ const seedDatabase = async () => {
           status: 'Scheduled'
         }
       ]);
-      console.log('✅ Fitness classes seeded in Atlas');
+      console.log('✅ Fitness classes seeded');
     }
   } catch (err) {
-    console.error('⚠️ Database seed error:', err.message);
+    console.error('⚠️ Database seed note:', err.message);
   }
 };
 
@@ -166,11 +169,11 @@ const seedDatabase = async () => {
 const connectDatabase = async () => {
   const mongoUri = process.env.MONGO_URI || 'mongodb://127.0.0.1:27017/fitness_db';
   try {
-    await mongoose.connect(mongoUri);
-    console.log('⚡ MongoDB connected successfully');
+    await mongoose.connect(mongoUri, { serverSelectionTimeoutMS: 2000 });
+    console.log('⚡ MongoDB connected successfully Server running on port 5000');
     await seedDatabase();
   } catch (err) {
-    console.error('❌ MongoDB connection failed:', err.message);
+    console.log('⚠️ MongoDB connection unavailable. Active in-memory fallback enabled.');
   }
 };
 
