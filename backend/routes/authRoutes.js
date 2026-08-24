@@ -14,7 +14,7 @@ const generateToken = (id) => {
 };
 
 // @route   POST /api/auth/register
-// @desc    Public Signup — Creates a member account in MongoDB Atlas (Always forces role = member)
+// @desc    Public Signup — Creates a member account in MongoDB (Always forces role = member)
 // @access  Public
 router.post('/register', async (req, res, next) => {
   try {
@@ -80,6 +80,7 @@ router.post('/login', async (req, res, next) => {
     }
 
     const member = await Member.findOne({ email: email.toLowerCase() }).select('+password');
+
     if (!member) {
       return res.status(401).json({
         success: false,
